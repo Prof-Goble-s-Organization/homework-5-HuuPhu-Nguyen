@@ -1,5 +1,7 @@
 package hw5;
 
+import java.util.NoSuchElementException;
+
 /**
  * Linked implementation of a binary search tree. The binary search tree
  * inherits the methods from the binary tree. The add and remove methods must
@@ -101,16 +103,48 @@ public class COMP232LinkedBinarySearchTree<K extends Comparable<K>, V> extends C
 	 */
 	public V get(K key) {
 		// Intentionally not implemented - see homework assignment.
-		throw new UnsupportedOperationException("Not yet implemented");
+		BTNode<K,V> node = getNode(this.root, key);
+		return (node == null) ? null : node.value;
+	}
+
+	private BTNode<K,V> getNode(BTNode<K,V> subTreeRoot, K key){
+		if (subTreeRoot == null) {
+			return null; // off the tree.
+		} else if (subTreeRoot.key.equals(key)) {
+			return subTreeRoot; // found it.
+		} else if (key.compareTo(subTreeRoot.key) < 0) {
+			/*
+			 * The key we are looking for is less than the key at the
+			 * subTreeRoot so if it is in the tree it will be in the left
+			 * subtree.
+			 */
+			return getNode(subTreeRoot.left, key);
+		} else {
+			/*
+			 * The key we are looking for is greater than or equal to the key at
+			 * the subTreeRoot so if it is in the tree it will be in the right
+			 * subtree.
+			 */
+			return getNode(subTreeRoot.right, key);
+		}
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
-	public void set(K key, V value) {
+	public void set(K key, V value) throws NoSuchElementException {
 		// Intentionally not implemented - see homework assignment.
-		throw new UnsupportedOperationException("Not yet implemented");
+		BTNode<K, V> node = getNode(this.root, key);
+		if (node == null){
+			throw new NoSuchElementException();
+		}
+		else{
+			node.value = value;
+		}
+
 	}
+
+
 
 	/**
 	 * {@inheritDoc}
@@ -169,9 +203,103 @@ public class COMP232LinkedBinarySearchTree<K extends Comparable<K>, V> extends C
 	/**
 	 * {@inheritDoc}
 	 */
-	public V remove(K key) {
+	public V remove(K key) throws NoSuchElementException {
 		// Intentionally not implemented - see homework assignment.
-		throw new UnsupportedOperationException("Not yet implemented");
+
+		if(this.root == null){
+			return null;
+		}
+
+		BTNode<K, V> removeNode = getNode(this.root, key);
+		V returnValue = removeNode.value;
+		super.size -=1;
+
+		//2 child (case 3)
+		if (removeNode.left != null && removeNode.right != null) {
+			BTNode<K, V> rightMostNode = removeNode.right;
+			while (rightMostNode.left != null) {
+				rightMostNode = rightMostNode.left;
+			}
+
+			this.swap(removeNode, rightMostNode);
+
+			if(rightMostNode.isLeaf()){
+				this.removeCase1(rightMostNode);
+			}
+			else{
+				this.removeCase2(rightMostNode);
+			}
+
+		}
+
+		//have only one child
+		else if (removeNode.left != null || removeNode.right !=null) {
+			this.removeCase2(removeNode);
+		}
+
+		//is leaf
+		else{
+			removeCase1(removeNode);
+		}
+		return returnValue;
+	}
+
+	//helper method
+	private void swap(BTNode<K, V> node1, BTNode<K, V> node2) {
+		K dummyKey = node1.key;
+		V dummyValue = node1.value;
+
+		node1.key = node2.key;
+		node1.value = node2.value;
+		node2.key = dummyKey;
+		node2.value = dummyValue;
+	}
+
+	//helper method for remove a node that only have one child
+	private void removeCase2(BTNode<K, V> parentNode) {
+		BTNode<K, V> childNode;
+		if(parentNode.left !=null){
+			childNode = parentNode.left;
+			parentNode.left=null;
+		}
+		else{
+			childNode=parentNode.right;
+			parentNode.right=null;
+		}
+
+		if(parentNode==this.root){
+			this.root=childNode;
+			childNode.parent=null;
+		}
+		else{
+			BTNode<K, V> grandParentNode = parentNode.parent;
+			childNode.parent=grandParentNode;
+			if(grandParentNode.left == parentNode){
+				grandParentNode.left=childNode;
+			}
+			else{
+				grandParentNode.right=childNode;
+			}
+		}
+
+	}
+
+	//helper method to remove a leaf node
+	private void removeCase1(BTNode<K, V> removeNode) {
+		if(this.root==removeNode){
+			this.root = null;
+		}
+		else{
+			BTNode<K, V> parentNode = removeNode.parent;
+			removeNode.parent = null;
+
+			if (parentNode.left == removeNode) {
+				parentNode.left = null;
+			}
+			else{
+				parentNode.right = null;
+			}
+		}
 	}
 
 	/*
